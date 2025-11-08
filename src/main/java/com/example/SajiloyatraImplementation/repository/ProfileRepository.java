@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
-    Optional<Profile> findByUserId(Long userId); // works because Profile.user maps to User.id
+    Optional<Profile> findByUserId(Long userEmail); // works because Profile.user maps to User.id
 }

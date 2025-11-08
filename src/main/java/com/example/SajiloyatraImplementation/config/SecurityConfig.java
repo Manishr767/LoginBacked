@@ -1,16 +1,21 @@
 package com.example.SajiloyatraImplementation.config;
 
 import com.example.SajiloyatraImplementation.service.CustomUserDetailsService;
+// Import the new filter
+import com.example.SajiloyatraImplementation.config.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+// Import this
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
 @Configuration
@@ -18,18 +23,19 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthFilter; // 1. Inject the filter
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+    // 2. Update the constructor
+    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtAuthenticationFilter jwtAuthFilter) {
         this.userDetailsService = userDetailsService;
+        this.jwtAuthFilter = jwtAuthFilter;
     }
 
-    // Password encoder bean
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // Authentication provider using UserDetailsService and PasswordEncoder
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -38,36 +44,39 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    // AuthenticationManager bean
     @Bean
-    public AuthenticationManager authenticationManager(
-            org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration authConfig
-    ) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // Security filter chain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     var config = new CorsConfiguration();
                     config.setAllowCredentials(true);
-                    config.addAllowedOrigin("http://localhost:3000"); // React frontend
+                    config.addAllowedOrigin("http://localhost:3000");
                     config.addAllowedHeader("*");
                     config.addAllowedMethod("*");
                     return config;
                 }))
+
+                // This is correct!
                 .csrf(csrf -> csrf.disable())
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()           // public: login/register
-                        .requestMatchers("/api/destinations/**").permitAll()   // public: destinations
-                        .requestMatchers("/api/profile/me").authenticated()   // only logged-in users
-                        .requestMatchers("/api/profile/update").authenticated() // only logged-in users
-                        .anyRequest().authenticated()                          // all other endpoints require auth
+                        .requestMatchers("/api/auth/**").permitAll()     // public
+                        .requestMatchers("/uploads/**").permitAll()    // public
+                        // All other requests must be authenticated
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider());
+                .authenticationProvider(authenticationProvider())
+
+                // 3. Add the filter to the security chain
+                // This tells Spring to check for a JWT on every request
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    }}
+    }
+}

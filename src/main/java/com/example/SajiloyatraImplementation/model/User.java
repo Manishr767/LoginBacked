@@ -24,6 +24,16 @@ public class User implements UserDetails {
     private String password;
     private String phoneNumber;
 
+    // --- NEW FIELDS ---
+    @Column(name = "bio", length = 1024) // Added length for longer text
+    private String bio;
+
+    @Column(name = "skills")
+    private String skills; // Will store as a comma-separated string
+
+    @Column(name = "profile_photo_url")
+    private String profilePhotoUrl; // Will store the path to the image, e.g., "/uploads/uuid.jpg"
+
     // --- Getters & Setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -37,6 +47,15 @@ public class User implements UserDetails {
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     public void setPassword(String password) { this.password = password; }
 
+    // --- Getters & Setters for NEW FIELDS ---
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
+    public String getSkills() { return skills; }
+    public void setSkills(String skills) { this.skills = skills; }
+    public String getProfilePhotoUrl() { return profilePhotoUrl; }
+    public void setProfilePhotoUrl(String profilePhotoUrl) { this.profilePhotoUrl = profilePhotoUrl; }
+
+
     // --- UserDetails Methods ---
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() { return null; }
@@ -45,7 +64,7 @@ public class User implements UserDetails {
     public String getPassword() { return password; }
 
     @Override
-    public String getUsername() { return email; }
+    public String getUsername() { return email; } // Good: using email as username
 
     @Override
     public boolean isAccountNonExpired() { return true; }
