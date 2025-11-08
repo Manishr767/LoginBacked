@@ -1,0 +1,17 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # This runs "at minute 0 past hour 12 every day" (i.e., noon UTC)
+    # You can change this, but once a day is enough.
+    - cron: '0 12 * * *'
+
+jobs:
+  ping_database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        run: |
+          curl -X POST "${{ secrets.SUPABASE_PING_URL }}" \
+          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
